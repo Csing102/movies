@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AmiToonz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem 1rem;
+    }
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.5rem;
+      color: #ffdf6c;
+      text-shadow: 2px 2px 6px #222;
+    }
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0 1rem 0;
+    }
+    input[type="text"] {
+      padding: 0.7rem 1rem;
+      width: 60vw;
+      max-width: 400px;
+      border-radius: 25px;
+      border: none;
+      font-size: 1.1rem;
+      box-shadow: 0 2px 10px #2228;
+    }
+    .movie-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+    }
+    .movie-card {
+      background: rgba(30,60,114,0.85);
+      border-radius: 18px;
+      box-shadow: 0 4px 24px #2228;
+      padding: 1.2rem 1rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .movie-card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 8px 32px #222b;
+    }
+    .movie-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0.7rem 0 1rem 0;
+      color: #ffdf6c;
+      text-align: center;
+      text-shadow: 1px 1px 6px #222;
+    }
+    video {
+      width: 95%;
+      max-width: 350px;
+      border-radius: 8px;
+      background: #000;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 2px 16px #2225;
+    }
+    @media (max-width: 650px) {
+      .movie-list {
+        padding: 1rem;
+        gap: 1rem;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+    }
+    footer {
+      text-align: center;
+      color: #ffdf6c;
+      padding: 1rem 0;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🍿 AmiToonz</h1>
+    <div class="search-bar">
+      <input id="searchInput" type="text" placeholder="Search movies...">
+    </div>
+  </header>
+  <main>
+    <div class="movie-list" id="movieList">
+      <!-- Movie cards will be injected here -->
+    </div>
+  </main>
+  <footer>
+    &copy; 2025 AmiToonz. Made with ❤️ for movie lovers.
+  </footer>
+  <script>
+    async function fetchManifest() {
+      try {
+        const response = await fetch('manifest.json');
+        if (!response.ok) throw new Error('manifest.json not found');
+        const manifest = await response.json();
+        return manifest.movies || [];
+      } catch (e) {
+        document.getElementById('movieList').innerHTML = 
+          `<div style="color:#ffdf6c;font-size:1.2rem;text-align:center;">Error loading manifest.json<br>${e.message}</div>`;
+        return [];
+      }
+    }
+
+    function fileNameToTitle(filename) {
+      // Remove extension, underscores, dashes, and capitalize words
+      return filename.replace(/\.[^/.]+$/, '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function createMovieCard(filename) {
+      const title = fileNameToTitle(filename);
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      card.innerHTML = `
+        <div class="movie-title">${title}</div>
+        <video controls preload="none" poster="" src="${filename}"></video>
+        <a href="${filename}" download style="margin-top:8px;color:#ffdf6c;text-decoration:underline;opacity:0.75;font-size:0.97rem;">Download</a>
+      `;
+      return card;
+    }
+
+    function filterMovies(movies, query) {
+      query = query.trim().toLowerCase();
+      return query
+        ? movies.filter(f => fileNameToTitle(f).toLowerCase().includes(query))
+        : movies;
+    }
+
+    async function renderMovies() {
+      const movies = await fetchManifest();
+      let allMovies = movies.slice(); // keep original list
+      const movieList = document.getElementById('movieList');
+      const searchInput = document.getElementById('searchInput');
+
+      function showMovies(filtered) {
+        movieList.innerHTML = '';
+        if (filtered.length === 0) {
+          movieList.innerHTML = `<div style="grid-column:1/-1;text-align:center;font-size:1.3rem;color:#ffdf6c;">No movies found.</div>`;
+        } else {
+          filtered.forEach(filename => movieList.appendChild(createMovieCard(filename)));
+        }
+      }
+
+      searchInput.addEventListener('input', () => {
+        showMovies(filterMovies(allMovies, searchInput.value));
+      });
+
+      showMovies(allMovies);
+    }
+
+    renderMovies();
+  </script>
+</body>
+</html>
